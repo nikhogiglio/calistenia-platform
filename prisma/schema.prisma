@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  passwordHash  String
+  role          Role       @default(USER)
+  createdAt     DateTime   @default(now())
+  purchases     Purchase[]
+}
+
+model Program {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  price       Int // in cents
+  currency    String   @default("usd")
+  imageUrl    String?
+  order       Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  levels      Level[]
+  purchases   Purchase[]
+}
+
+model Level {
+  id          String   @id @default(cuid())
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  programId   String
+  name        String // e.g. "LEVEL 1 — BEGINNER"
+  order       Int      @default(0)
+  goals       String?  @db.Text
+  experience  String?  @db.Text
+  schedule    String?  @db.Text
+  warmup      String?  @db.Text
+  days        Day[]
+
+  @@unique([programId, order])
+}
+
+model Day {
+  id        String     @id @default(cuid())
+  level     Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  levelId   String
+  title     String // e.g. "DAY 1 — PUSH"
+  order     Int        @default(0)
+  exercises Exercise[]
+
+  @@unique([levelId, order])
+}
+
+model Exercise {
+  id        String  @id @default(cuid())
+  day       Day     @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  dayId     String
+  name      String
+  sets      String
+  repsTime  String
+  rest      String
+  videoUrl  String?
+  notes     String? @db.Text
+  order     Int     @default(0)
+}
+
+model Purchase {
+  id                    String   @id @default(cuid())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  program                Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  programId             String
+  stripeCheckoutSession String?  @unique
+  stripePaymentIntent   String?
+  amount                Int
+  currency              String   @default("usd")
+  status                String   @default("pending") // pending | paid | refunded
+  createdAt             DateTime @default(now())
+
+  @@unique([userId, programId])
+}
+
+model CoachProfile {
+  id          String  @id @default(cuid())
+  name        String
+  headline    String?
+  bio         String  @db.Text
+  photoUrl    String?
+  credentials String? @db.Text
+  instagram   String?
+}
