@@ -37,8 +37,8 @@ export async function POST(req: Request) {
       {
         price_data: {
           currency: program.currency.toLowerCase(),
-          product_data: { name: program.title, description: program.subtitle },
-          unit_amount: program.price,
+              product_data: { name: program.title, description: program.subtitle || undefined },         
+                        unit_amount: program.price,
         },
         quantity: 1,
       },
